@@ -27,7 +27,7 @@ void ms_timer_init(void){
 
 	ms_timers_status = 0;
 	NRF_RTC1->PRESCALER = RTC_PRESCALER;      // Set prescaler to a TICK of RTC_FREQUENCY.
-	NVIC_SetPriority(RTC1_IRQn,3);
+	NVIC_SetPriority(RTC1_IRQn,2);
 	NVIC_EnableIRQ(RTC1_IRQn);    // Enable Interrupt for RTC1 in the core.
 }
 
@@ -65,7 +65,6 @@ void stop_ms_timer(timer_num id){
 	NRF_RTC1->INTENCLR 		= 1 << (RTC_INTENSET_COMPARE0_Pos + id);
 
 	if(ms_timers_status == 0){
-		printf("wHY?\n");
 		NRF_RTC1->TASKS_STOP = 1;
 		lfclk_deinit();
 	}

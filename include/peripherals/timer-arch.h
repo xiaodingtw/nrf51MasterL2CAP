@@ -5,8 +5,8 @@
  *      Author: prithvi
  */
 
-#ifndef RTIMER_ARCH_H_
-#define RTIMER_ARCH_H_
+#ifndef TIMER_ARCH_H_
+#define TIMER_ARCH_H_
 
 #include "nrf.h"
 #include "clock-nrf.h"
@@ -18,12 +18,7 @@
 #define TIMER_COMPARE_FREQ	256
 #endif
 #define RTIMER_ARCH_SECOND (((HFCLK_FREQUENCY)/(1<<TIMER_PRESCALER))/TIMER_COMPARE_FREQ)
-#define RTIMER_CLOCK_LT(a,b) ((int32_t)((a)-(b)) < 0)
-
-typedef uint32_t rtimer_clock_t;
 
 void rtimer_arch_init(void);
-void rtimer_arch_schedule(rtimer_clock_t t);
-rtimer_clock_t rtimer_arch_now(void);
 
-#endif /* RTIMER_ARCH_H_ */
+#endif /* TIMER_ARCH_H_ */

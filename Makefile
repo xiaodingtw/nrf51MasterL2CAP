@@ -12,6 +12,7 @@ NM      := $(GCC_INSTALL_ROOT)/bin/$(GCC_PREFIX)-nm
 OBJDUMP := $(GCC_INSTALL_ROOT)/bin/$(GCC_PREFIX)-objdump
 OBJCOPY := $(GCC_INSTALL_ROOT)/bin/$(GCC_PREFIX)-objcopy
 GDB     := $(GCC_INSTALL_ROOT)/bin/$(GCC_PREFIX)-gdb
+SIZE    := $(GCC_INSTALL_ROOT)/bin/$(GCC_PREFIX)-size
 
 MK	:= mkdir -p
 RM	:= rm -rf
@@ -24,15 +25,13 @@ OBJ_DIR			= obj
 SRC_DIR			= src
 LINK_DIR		= link
 
-### Device related stuff
-###
+### Device related stuff ###
 BOARD			:= BOARD_PCA10000
 CPU				:= cortex-m0
 DEVICE 			:= NRF51
 DEVICESERIES 	:= nrf51
 
-### Programmer
-###
+### Programmer ###
 JLINK_DIR 		= /opt/SEGGER/JLink/
 JLINK 			= $(JLINK_DIR)JLinkExe
 JLINKGDBSERVER	= $(JLINK_DIR)JLinkGDBServer
@@ -46,19 +45,16 @@ INCLUDEDIRS	+= $(GCC_INSTALL_ROOT)/lib/gcc/$(GCC_PREFIX)/$(GCC_VERSION)/include/
 INCLUDEDIRS	+= $(GCC_INSTALL_ROOT)/lib/gcc/$(GCC_PREFIX)/$(GCC_VERSION)/include-fixed/
 INCLUDEDIRS	+= $(GCC_INSTALL_ROOT)/$(GCC_PREFIX)/include/
  
-### Source files
-###
-
+### Source files ###
 # Project Source
 C_SRC  = $(shell find src -name *.c | awk -F/ '{print $$NF}')
 
 ### Assembly source files
 ASSEMBLY_SRC = gcc_startup_$(DEVICESERIES).s
 
-### Compiler related stuff
-###
-CFLAGS  = -ggdb	#info for the debugger
-CFLAGS	+= -Og	#debugging friendly
+### Compiler related stuff ###
+CFLAGS	= -Og	#debugging friendly
+CFLAGS  += -ggdb	#info for the debugger
 CFLAGS	+= -mcpu=$(CPU)
 CFLAGS	+= -mthumb
 CFLAGS	+= -mabi=aapcs
@@ -68,8 +64,7 @@ CFLAGS	+= -D$(DEVICE)
 CFLAGS	+= -D$(BOARD)
 CFLAGS	+= $(patsubst %,-I%, $(INCLUDEDIRS))
 
-### Linker related stuff
-###
+### Linker related stuff ###
 LDDIRS 	 = $(GCC_INSTALL_ROOT)/$(GCC_PREFIX)/lib/armv6-m
 LDDIRS 	+= $(GCC_INSTALL_ROOT)/lib/gcc/$(GCC_PREFIX)/$(GCC_VERSION)/armv6-m
 LDDIRS	+= $(LINK_DIR)
@@ -109,7 +104,11 @@ vpath %.s $(ASSEMBLY_SRC_DIRS)
 ### Rules
 ###
 # Default build target
-.PHONY : all
+.PHONY : all size
+
+size :
+	$(SIZE) $(OUTPUT_DIR)/$(OUTPUT_NAME).elf
+
 all : release
 
 clean : 
