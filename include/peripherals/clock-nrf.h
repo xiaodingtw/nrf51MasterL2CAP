@@ -13,11 +13,11 @@
 #include "leds.h"
 #include "nrf_delay.h"
 #include "nrf_gpio.h"
-#include "simple_uart.h"
+#include "uart_nrf.h"
 
 #define DIV_ROUNDED(x,y) 			((x + y/2)/y)
 
-/**< Required RTC working clock RTC_FREQUENCY Hertz. Changable, but should be usable by RTC_TICKS */
+/* RTC clock freq from LF clock in Hertz. Changable, but should be usable by RTC_TICKS */
 #define RTC_FREQUENCY				32768
 /* Check if RTC_FREQUENCY is power of 2 and less than or equal to 32.768 kHz */
 #if (!(!(RTC_FREQUENCY & (RTC_FREQUENCY-1)) && RTC_FREQUENCY && (RTC_FREQUENCY<=32768)))

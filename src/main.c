@@ -1,4 +1,4 @@
-#include "simple_uart.h"
+#include "uart_nrf.h"
 #include "leds.h"
 #include "nrf.h"
 #include "board.h"
@@ -6,25 +6,32 @@
 #include "clock-init.h"
 #include "string.h"
 #include "appli.h"
+#include "timer.h"
+
+//void dummy (uint8_t * ptr){
+//	printf("Data sent: %s\n", ptr);
+//}
 
 int
 main(void)
 {
 	hfclk_xtal_init();
+	timer_init();
 	lfclk_init();
 	leds_init();
 	ms_timer_init();
-	simple_uart_config(RTS_PIN_NUMBER, TX_PIN_NUMBER, CTS_PIN_NUMBER, RX_PIN_NUMBER,
-    		UART_BAUDRATE_BAUDRATE_Baud115200, 12, HWFC);
-	radio_init();
+	uart_init();
+	scan_radio_init();
 
 	/* Enable the low latency mode */
 	NRF_POWER->TASKS_CONSTLAT = 1;
 
-    printf("\r\nStart Scanning:\r\n");
+    printf("Start Scanning:\n");
+
+
     scan_begin();
 
-  while(true) {
+	while(true) {
 	  __WFI();
-  }
+	}
 }
