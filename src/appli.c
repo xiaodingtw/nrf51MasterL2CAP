@@ -27,9 +27,9 @@
 
 static uint8_t pdu[MAX_PDU_SIZE];
 
-static uint8_t packets[10][MAX_PDU_SIZE+8];
+static uint8_t packets[10][MAX_PDU_SIZE+12];
 
-static uint8_t scan_res_packet[MAX_PDU_SIZE+8];
+static uint8_t scan_res_packet[MAX_PDU_SIZE+12];
 
 static uint8_t rssi = 0;
 static uint32_t count = 0;
@@ -40,6 +40,8 @@ enum {
 	SCAN_REQ_SENT,
 	SCAN_RSP_RECD
 }scan_state;
+
+uint32_t adrs_time;
 
 uint8_t scan_address[6];
 
@@ -52,10 +54,16 @@ static void scan_req(uint8_t * ptr);
 /** @brief: Function for handling the Radio interrupts.
  */
 void RADIO_IRQHandler(){
+	if(NRF_RADIO->EVENTS_ADDRESS == 1){
+		NRF_RADIO->EVENTS_ADDRESS = 0;
+		adrs_time = read_time_us();
+	}
+
 	if(NRF_RADIO->EVENTS_END == 1){
 
 		NRF_RADIO->EVENTS_END = 0;
 		collect_packet();
+
 
 		/* See if scan is needed, channel is 37 or 38, and scan_address is the required address */
 		if((scan_state == SCAN_NEEDED) 							  &&
@@ -92,6 +100,10 @@ NRF_UART0->TXD = (uint8_t) '@';
 
 NRF_UART0->TXD = (uint8_t) '#';
 
+			NRF_RADIO->SHORTS = /*RADIO_SHORTS_READY_START_Msk | */
+								RADIO_SHORTS_END_DISABLE_Msk |
+								RADIO_SHORTS_DISABLED_TXEN_Msk;
+
 			/* Check address type of the advertiser. PDU type is SCAN_REQ */
 			if(pdu[0] & 0x40){
 				pdu[0] = 0x83;
@@ -113,6 +125,7 @@ NRF_UART0->TXD = (uint8_t) '$';
 		    NRF_RADIO->EVENTS_DISABLED = 0UL;
 			NRF_RADIO->TASKS_DISABLE = 1UL;
 			while (NRF_RADIO->EVENTS_DISABLED == 0UL);
+		    NRF_RADIO->EVENTS_DISABLED = 0UL;
 
 		    NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
 		    					RADIO_SHORTS_ADDRESS_RSSISTART_Msk |
@@ -172,6 +185,7 @@ static void collect_packet(void){
 		packets[count][MAX_PDU_SIZE+5] = rssi;
 		packets[count][MAX_PDU_SIZE+6] = (uint8_t) NRF_RADIO->STATE & 0xF;
 		packets[count][MAX_PDU_SIZE+7] = (uint8_t) scan_state;
+		memcpy(*(packets + count) + MAX_PDU_SIZE + 8,&adrs_time, 4);
 		count++;
 	}
 }
@@ -179,6 +193,9 @@ static void collect_packet(void){
 static void print_collected(uint8_t * packet_to_print){
 	uint32_t packet_time;
 	memcpy(&packet_time,packet_to_print + MAX_PDU_SIZE,4);
+	printfcomma(packet_time);
+	printf("us ");
+	memcpy(&packet_time,packet_to_print + MAX_PDU_SIZE + 8,4);
 	printfcomma(packet_time);
 	printf("us ");
 	printf("C%d ", (int) packet_to_print[MAX_PDU_SIZE+4]&0x7F);
@@ -236,7 +253,15 @@ static void scan_start(){
 	NRF_RADIO->DATAWHITEIV = (temp == 2)?37 : ((temp == 26)?38:39);
 
 	if(temp == 26){
-		scan_req((uint8_t *)"S_REQ");
+//		scan_state = SCAN_REQ_TO_BE_SENT;
+//
+//		NRF_RADIO->SHORTS = RADIO_SHORTS_READY_START_Msk |
+//							RADIO_SHORTS_END_DISABLE_Msk;
+//
+//		NRF_RADIO->TIFS = 150;
+//
+//		NRF_RADIO->INTENSET = RADIO_INTENSET_ADDRESS_Msk;
+//PRINT_TIME;
 	}
 
 	NRF_RADIO->EVENTS_READY = 0UL;
@@ -365,7 +390,8 @@ void scan_radio_init(){
     					RADIO_SHORTS_ADDRESS_RSSISTART_Msk |
     					RADIO_SHORTS_END_START_Msk;
 
-    NRF_RADIO->INTENSET = RADIO_INTENSET_RSSIEND_Msk |
+    NRF_RADIO->INTENSET = RADIO_INTENSET_ADDRESS_Msk |
+    					  RADIO_INTENSET_RSSIEND_Msk |
     					  RADIO_INTENSET_END_Msk;
 
     // Enable Interrupt for RADIO in the core.
